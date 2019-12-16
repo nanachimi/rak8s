@@ -1,0 +1,8 @@
+- hosts: master_nodes
+  roles:
+    - common
+    - kubeadm
+
+- hosts: master_nodes
+  roles:
+    - master

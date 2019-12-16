@@ -1,5 +1,26 @@
 ---
-- name: Ensure hostname set
+- name: Add Google Cloud Repo Key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Kubernetes to available apt sources
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Update apt packages
+  apt:
+    update_cache: yes
+    autoclean: yes
+    autoremove: yes
+    cache_valid_time: 86400
+
+- name: Upgrade apt packages
+  apt:
+    upgrade: full
+
+- name: Ensure hostname format
   hostname:
     name: "{{ inventory_hostname }}"
   when: not inventory_hostname is match('(\d{1,3}\.){3}\d{1,3}')
@@ -14,7 +35,7 @@
   register: hostname
   tags: hostname
 
-- name: set timezone to UTC
+- name: Set timezone to UTC
   timezone:
     name: UTC
   register: timezone
@@ -42,34 +63,87 @@
   tags:
     - boot
 
-- name: apt-get update
-  apt:
-    update_cache: yes
-    autoclean: yes
-    autoremove: yes
-    cache_valid_time: 86400
+- name: Disable swap
+  shell: dphys-swapfile swapoff
+  ignore_errors: yes
+  become: yes
 
-- name: apt-get upgrade
-  apt:
-    upgrade: full
+- name: Uninstall swap
+  shell: dphys-swapfile uninstall
+  ignore_errors: yes
+  become: yes
 
-- name: python-apt dependency
-  shell: apt-get install -y python-apt
+- name: Remove swap
+  shell: update-rc.d dphys-swapfile remove
+  ignore_errors: yes
+  become: yes
+
+- name: Adding CONF_SWAPSIZE=0 to /etc/dphys-swapfile
+  lineinfile:
+    path: /etc/dphys-swapfile
+    line: CONF_SWAPSIZE=0
+    create: yes
+  become: yes
+
+- name: Install apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: latest
+
+- name: Install python-apt package
+  shell: apt install -y python-apt
   args:
     warn: no
 
-- name: Reboot
-  shell: sleep 2 && shutdown -r now "Ansible Reboot"
+- name: Determine if docker is installed
+  stat:
+    path: /usr/bin/docker
+  register: docker_path
+  ignore_errors: yes
+
+- name: Run Docker Install Script
+  script: files/get-docker.sh
+  when: docker_path.stat.exists == no
+  register: docker_installed
+
+- name: Lock last stable docker version
+  remote_user: pi
+  shell: apt-mark hold docker-ce
+  when: docker_installed.changed
+  become: yes
+
+- name: Add pi to docker group
+  remote_user: pi
+  shell: usermod -aG docker pi
+  become: yes
+
+- name: Install kubelet {{ kubernetes_package_version }}
+  apt:
+    name: "kubelet={{ kubernetes_package_version }}"
+    state: present
+    force: yes
+
+- name: Install kubeadm {{ kubernetes_package_version }}
+  apt:
+    name: "kubeadm={{ kubernetes_package_version }}"
+    state: present
+    force: yes
+
+- name: Install kubectl {{ kubernetes_package_version }}
+  apt:
+    name: "kubectl={{ kubernetes_package_version }}"
+    state: present
+    force: yes
+
+- name: Reboot raspberry pis
+  shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0
   ignore_errors: True
   when: cmdline or timezone or hostname is changed
 
-- name: Wait for Reboot
-  local_action: wait_for
-  args:
-    host: "{{ inventory_hostname }}"
-    port: 22
+- name: Wait for reboot
+  wait_for_connection:
     delay: 15
     timeout: 120
-  become: False
+

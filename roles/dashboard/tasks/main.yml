@@ -1,15 +1,15 @@
 ---
 # tasks file for dashboard
-- name: Install k8s Dashboard
-  shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard-arm.yaml
+- name: Install kubernets dashboard
+  shell: kubectl apply -f files/kubernetes-dashboard.yml
 
-- name: Configure Dashboard Access
-  shell: kubectl apply -f https://raw.githubusercontent.com/rak8s/rak8s/master/roles/dashboard/files/dashboard-admin.yaml
+- name: Configure dashboard access
+  shell: kubectl apply -f files/dashboard-admin.yml
 
-- name: Force Rebuild Dashboard Pods
+- name: Force rebuild dashboard pods
   shell: kubectl -n kube-system delete $(kubectl -n kube-system get pod -o name | grep dashboard)
 
-- name: Fetch kubeconfig file
+- name: Fetch kubeconfig files
   fetch:
     src: /root/.kube/config
     dest: ~/.kube/config

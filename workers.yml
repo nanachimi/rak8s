@@ -1,0 +1,8 @@
+- hosts: worker_nodes
+  roles:
+    - common
+    - kubeadm
+
+- hosts: worker_nodes
+  roles:
+    - workers

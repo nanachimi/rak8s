@@ -1,6 +1,6 @@
-- hosts: master
+- hosts: master_nodes
   tasks:
-    - name: apt-get update
+    - name: Update apt packages
       apt:
         update_cache: yes
         autoclean: yes
@@ -8,10 +8,9 @@
 
     - name: Upgrade kubeadm
       apt:
-        name: "{{ item }}"
+        name:
+          - kubeadm
         state: latest
-      with_items:
-        - kubeadm
 
     - name: Determine latest stable version of Kubernetes
       shell: curl -sSL https://dl.k8s.io/release/stable.txt
@@ -39,18 +38,17 @@
   tasks:
     - name: Upgrade Y'all
       apt:
-        name: "{{ item }}"
+        name: 
+          - kubelet
+          - kubectl
         state: latest
-      with_items:
-        - kubelet
-        - kubectl
       tags:
         - kubelet
         - kubectl
 
-- hosts: master
+- hosts: master_nodes
   tasks:
-    - name: Uncordon Hosts
+    - name: Uncordon hosts
       shell: "kubectl uncordon {{ item }}"
       with_items:
         - "{{ groups['all'] }}"

@@ -1,13 +1,16 @@
-- hosts: all
+- hosts: worker_nodes
   roles:
     - common
     - kubeadm
 
-- hosts: master
+- hosts: master_nodes
   roles:
     - master
-#    - dashboard
 
-- hosts: all:!master
+- hosts: worker_nodes:!master_nodes
   roles:
     - workers
+
+- hosts: master_nodes
+  roles:
+    - dashboard
