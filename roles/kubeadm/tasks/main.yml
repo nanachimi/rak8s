@@ -2,9 +2,9 @@
 # tasks file for kubeadm
 
 # https://gist.github.com/alexellis/fdbc90de7691a1b9edb545c17da2d975
-- name: Disable Swap
-  shell: dphys-swapfile swapoff && dphys-swapfile uninstall && update-rc.d dphys-swapfile remove
-  ignore_errors: True
+#- name: Disable Swap
+#  shell: dphys-swapfile swapoff && dphys-swapfile uninstall && update-rc.d dphys-swapfile remove
+#  ignore_errors: True
 
 # Docker Convenience Script Can Only Be Run Once
 - name: Determine if docker is installed
@@ -14,21 +14,19 @@
   ignore_errors: True
 
 # https://docs.docker.com/engine/installation/linux/docker-ce/debian/#install-using-the-convenience-script
-- name: Run Docker {{ docker_ce_version }} Install Script
-  environment:
-    APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE: 1
-  script: "files/get-docker.sh {{ docker_ce_version }}"
+- name: Run Docker Install Script
+  script: files/get-docker.sh
   when: docker_there.stat.exists == False
   register: docker_installed
 
-- name: Lock docker version to {{ docker_ce_version}}
+- name: Lock last stable docker version
   command: /usr/bin/apt-mark hold docker-ce
   when: docker_installed.changed
 
-- name: Pass bridged IPv4 traffic to iptables' chains
+- name: Pass bridged IPv4 traffic to iptables chains
   sysctl:
     name: net.bridge.bridge-nf-call-iptables
-    value: 1
+    value: '1'
     state: present
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
@@ -42,7 +40,7 @@
   args:
     warn: no
 
-- name: Add Kubernetes to Available apt Sources
+- name: Add Kubernetes to available apt sources
   template:
     src: kubernetes.list
     dest: /etc/apt/sources.list.d/kubernetes.list
@@ -50,12 +48,23 @@
     group: root
     mode: 0644
 
-- name: Install k8s {{ kubernetes_package_version }} Y'all
+- name: Installing node agent kubelet {{ kubernetes_package_version }}
   apt:
-    name: "{{ item }}={{ kubernetes_package_version }}"
+    name: "kubelet={{ kubernetes_package_version }}"
     state: present
     force: yes
-  with_items:
-    - kubelet
-    - kubeadm
-    - kubectl
+
+- name: Installing k8s toolbox kubeadm {{ kubernetes_package_version }}
+  apt:
+    name: "kubeadm={{ kubernetes_package_version }}"
+    state: present
+    force: yes
+
+- name: Installing cmd tool kubectl {{ kubernetes_package_version }}
+  apt:
+    name: "kubectl={{ kubernetes_package_version }}"
+    state: present
+    force: yes
+
+- name: Holding kubelet, kubeadm and kubectl versions
+  shell: sudo apt-mark hold kubelet kubeadm kubectl

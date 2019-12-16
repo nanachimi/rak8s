@@ -1,46 +1,56 @@
 ---
-- name: "Reset Kubernetes"
+- name: Reset Kubernetes
   shell: echo $(kubeadm reset && echo 'true') 
 
-- name: "Remove docker images" 
+- name: Remove docker images
   shell: echo $(docker rmi --force $(docker images --all -q) && echo 'true')
   become: true
 
-- name: "apt-get update"
+- name: Update apt packages
   apt:
     update_cache: yes
     autoclean: yes
     autoremove: yes
 
-- name: "apt-get purge packages"
+- name: Purge apt packages
   apt:
-    name: "{{ item }}"
+    name: 
+        - kubelet
+        - kubeadm
+        - kubectl
+        - docker-ce
     state: absent
     purge: yes
     autoremove: yes
     force: yes
-  with_items:
-    - kubelet
-    - kubeadm
-    - kubectl
-    - docker-ce
 
-- name: "Remove pod logging"
-  shell: rm -rf /var/log/pods/* 
-  become: True
+- name: Remove /var/log/pods
+  file:
+    path: /var/log/pods
+    state: absent
 
-- name: Reboot
-  shell: sleep 2 && shutdown -r now "Ansible Reboot"
+- name: Remove /etc/kubernetes
+  file:
+    path: /etc/kubernetes
+    state: absent
+
+- name: Remove /var/lib/etcd
+  file:
+    path: /var/lib/etcd
+    state: absent
+
+- name: Remove ~/.kube
+  file:
+    path: ~/.kube
+    state: absent
+
+- name: Reboot Raspberry Pis
+  shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0
   ignore_errors: True
 
-- name: Wait for Reboot
-  local_action: wait_for
-  args:
-    host: "{{ inventory_hostname }}"
-    port: 22
-    delay: 15
+- name: Wait for reboot
+  wait_for_connection:
+    delay: 30
     timeout: 120
-  become: False
-
