@@ -1,8 +1,8 @@
 token: udy29x.ugyyk3tumg27atmr
 
-ca_cert_hash: sha256:b4db899840394d373468d7a8a6c1d4c1dc1e8b6a6f123aac2e0a871aa3ad6e98
+ca_cert_hash: sha256:fc12b911802333f8e3e27175bd3c7f7d94200ff973a1bfb6f53241d8b3d64ff4
 
-podnet: 192.168.0.0/16
+pod_network_cidr: 10.244.0.0/16
 
 kubernetes_package_version: "1.17.0-00"
 # Available versions:

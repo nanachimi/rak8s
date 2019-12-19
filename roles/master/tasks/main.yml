@@ -1,96 +1,85 @@
 ---
 # tasks file for master
 - name: Reset Kubernetes masters
+  become_user: root
   shell: kubeadm reset -f
   register: kubeadm_reset
+- debug: msg={{ kubeadm_reset.stdout }}
 
-- name: "Initialize Kubernetes masters ({{ kubernetes_version }})"
-  remote_user: pi
-  shell: kubeadm init  --token={{ token }} --kubernetes-version={{ kubernetes_version }} --node-name={{ groups['master_nodes'][0] }}
+- name: "Initialize Kubernetes masters"
+  become_user: root
+  shell: kubeadm init  --token={{ token }} --apiserver-advertise-address={{ hostvars['node01'].ansible_host }} --kubernetes-version={{ kubernetes_version }} --node-name={{ groups['master_nodes'][0] }} --pod-network-cidr={{ pod_network_cidr }}
   register: kubeadm_init
   when: kubeadm_reset is succeeded
   become: yes
-
-#- name: Create Kubernetes /root/.kube directory
-#  file:
-#    path: /root/.kube/
-#    state: directory
-#    owner: root
-#    group: root
-#    mode: 0755
-#
-#- name: Copy /etc/kubernetes/admin.conf to /root/.kube/config
-#  copy:
-#    src: /etc/kubernetes/admin.conf
-#    dest: /root/.kube/config
-#    owner: root
-#    group: root
-#    mode: 0755
-#    remote_src: yes
-#    backup: yes
-#  become: yes
-#  when: kubeadm_init
+- debug: msg={{ kubeadm_init.stdout }}
 
 - name: Create Kubernetes config file
-  remote_user: pi
+  become_user: root
+  shell: kubeadm config images pull
+  register: kube_config
+- debug: msg={{ kube_config.stdout }}
+
+- name: Create Kubernetes /root/.kube directory
+  become_user: root
+  file:
+    path: /root/.kube/
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Copy /etc/kubernetes/admin.conf to /root/.kube/config
+  become_user: root
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: 0755
+    remote_src: yes
+    backup: yes
+  become: yes
+  when: kubeadm_init
+
+- name: Create Kubernetes /home/pi/.kube folder
+  become_user: root
   file:
     path: /home/pi/.kube
     state: directory
     owner: pi
     group: pi
-    mode: u=rw,g=r,o=r
+    mode: u=rw,g=rw,o=rw
   when: kubeadm_init
-  become: no
-  become_user: pi
   register: kubedir
 
 - name: Copy /etc/kubernetes/admin.conf to /home/pi/.kube/config
-  remote_user: pi
+  become_user: root
   copy:
     src: /etc/kubernetes/admin.conf
     dest: /home/pi/.kube/config
     remote_src: yes
     backup: yes
-  become: yes
   when: kubedir
   register: kubefile
 
 - name: chown for /home/pi/.kube/config file
-  remote_user: pi
+  become_user: root
   file:
     path: /home/pi/.kube/config
     owner: pi
     group: pi
-    mode: u=rw,g=r,o=r
+    mode: u=rw,g=rw,o=rw
   become: yes
-  when: kubefile
-
-  #sudo usermod -aG docker pi
-  #mkdir -p $HOME/.kube
-  #sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  #sudo chown $(id -u):$(id -g) $HOME/.kube/config
-  # sudo swapoff -a
-#- name: "{{ groups['master_nodes'][0] }} is joining a cluster"
-#  shell: kubeadm join {{ groups['master_nodes'][0] }}:6443 --discovery-token-ca-cert-hash {{ ca_cert_hash }}
-#  when: kubeadm_reset is succeeded
-#  register: kubeadm_join
-
 
 # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/{{ flannel_version }}/Documentation/kube-flannel.yml
 - name: Install Flannel (Networking)
-  shell: files/kube-flannel.yml
+  become_user: root
+  shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/{{ flannel_version }}/Documentation/kube-flannel.yml
   register: flannel_installed
+- debug: msg={{ flannel_installed.stdout }}
 
-- name: Poke kubelet
-  systemd:
-    name: kubelet
-    state: restarted
-    daemon_reload: yes
-    enabled: yes
-  when: flannel_installed
-  register: kubelet_poke
-
-- name: Reboot {{ groups['master_nodes'][0] }}
+- name: Reboot the master
   shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0

@@ -1,20 +1,22 @@
 ---
 - name: Reset Kubernetes
-  shell: echo $(kubeadm reset && echo 'true') 
+  shell: echo $(kubeadm reset && echo 'true')
 
 - name: Remove docker images
   shell: echo $(docker rmi --force $(docker images --all -q) && echo 'true')
   become: true
 
 - name: Update apt packages
+  become_user: root
   apt:
     update_cache: yes
     autoclean: yes
     autoremove: yes
 
 - name: Purge apt packages
+  become_user: root
   apt:
-    name: 
+    name:
         - kubelet
         - kubeadm
         - kubectl
@@ -25,26 +27,58 @@
     force: yes
 
 - name: Remove /var/log/pods
+  become_user: root
   file:
     path: /var/log/pods
     state: absent
 
 - name: Remove /etc/kubernetes
+  become_user: root
   file:
     path: /etc/kubernetes
     state: absent
+  become: yes
+
+- name: Remove /etc/systemd/system/kubelet.service.d
+  become_user: root
+  file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: absent
+  become: yes
 
 - name: Remove /var/lib/etcd
+  become_user: root
   file:
     path: /var/lib/etcd
     state: absent
 
-- name: Remove ~/.kube
+- name: Remove /etc/cni/net.d
+  become_user: root
   file:
-    path: ~/.kube
+    path: /etc/cni/net.d
     state: absent
 
-- name: Reboot Raspberry Pis
+#- name: Remove $HOME/.kube/config
+#  become_user: pi
+#  shell: rm -r $HOME/.kube/config
+#  register: home_kubeconfig
+#  become: yes
+#- debug: msg={{ home_kubeconfig.stdout }}
+
+- name: Remove /home/pi/.kube
+  become_user: root
+  file:
+    path: /home/pi/.kube
+    state: absent
+
+- name: Remove /root/.kube
+  become_user: root
+  file:
+    path: /root/.kube
+    state: absent
+
+- name: Reboot raspberry pis
+  become_user: root
   shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0

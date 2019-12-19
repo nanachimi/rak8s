@@ -1,5 +1,6 @@
 ---
-- name: Add Google Cloud Repo Key
+- name: Add Google Cloud repository key
+  become_user: root
   apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
@@ -17,6 +18,7 @@
     cache_valid_time: 86400
 
 - name: Upgrade apt packages
+  become_user: root
   apt:
     upgrade: full
 
@@ -63,27 +65,16 @@
   tags:
     - boot
 
-- name: Disable swap
-  shell: dphys-swapfile swapoff
-  ignore_errors: yes
-  become: yes
+- name: Disabling swap
+  become_user: root
+  shell: swapoff -a
 
-- name: Uninstall swap
-  shell: dphys-swapfile uninstall
-  ignore_errors: yes
-  become: yes
-
-- name: Remove swap
-  shell: update-rc.d dphys-swapfile remove
-  ignore_errors: yes
-  become: yes
-
-- name: Adding CONF_SWAPSIZE=0 to /etc/dphys-swapfile
-  lineinfile:
+- name: Disabling Swap with CONF_SWAPSIZE=0
+  become_user: root
+  replace:
     path: /etc/dphys-swapfile
-    line: CONF_SWAPSIZE=0
-    create: yes
-  become: yes
+    regexp: '(.*CONF_SWAPSIZE=.*)'
+    replace: CONF_SWAPSIZE=0
 
 - name: Install apt-transport-https
   apt:
@@ -91,6 +82,7 @@
     state: latest
 
 - name: Install python-apt package
+  become_user: root
   shell: apt install -y python-apt
   args:
     warn: no
@@ -102,45 +94,56 @@
   ignore_errors: yes
 
 - name: Run Docker Install Script
+  become_user: root
   script: files/get-docker.sh
-  when: docker_path.stat.exists == no
+  when: docker_path.stat.exists == False
   register: docker_installed
 
 - name: Lock last stable docker version
-  remote_user: pi
+  become_user: root
   shell: apt-mark hold docker-ce
   when: docker_installed.changed
-  become: yes
 
 - name: Add pi to docker group
-  remote_user: pi
+  become_user: root
   shell: usermod -aG docker pi
   become: yes
 
+- name: Pass bridged IPv4 traffic to iptables chains
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    state: present
+
 - name: Install kubelet {{ kubernetes_package_version }}
+  become_user: root
   apt:
     name: "kubelet={{ kubernetes_package_version }}"
     state: present
     force: yes
+  register: kubelet_install
 
 - name: Install kubeadm {{ kubernetes_package_version }}
+  become_user: root
   apt:
     name: "kubeadm={{ kubernetes_package_version }}"
     state: present
     force: yes
 
 - name: Install kubectl {{ kubernetes_package_version }}
+  become_user: root
   apt:
     name: "kubectl={{ kubernetes_package_version }}"
     state: present
     force: yes
 
-- name: Reboot raspberry pis
+
+- name: Reboot all raspberry pis
   shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0
   ignore_errors: True
-  when: cmdline or timezone or hostname is changed
+  when: cmdline or tiFmezone or hostname is changed
 
 - name: Wait for reboot
   wait_for_connection:

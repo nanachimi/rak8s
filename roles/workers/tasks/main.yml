@@ -1,0 +1,19 @@
+---
+- name: {{ inventory_hostname }} joining master node at {{ hostvars['node01'].ansible_host }}:6443
+  become_user: root
+  shell: kubeadm join {{ hostvars['node01'].ansible_host }}:6443 --token {{ token }} --discovery-token-unsafe-skip-ca-verification
+  #shell: kubeadm join {{ groups['master_nodes'][0] }}:6443 --token {{ token }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+  register: kubeadm_join
+- debug: msg={{ kubeadm_join.stdout }}
+
+- name: Reboot workers
+  shell: sleep 2 && reboot "Ansible Reboot"
+  async: 1
+  poll: 0
+  ignore_errors: True
+  when: cmdline or timezone or hostname is changed
+
+- name: Wait for reboot
+  wait_for_connection:
+    delay: 15
+    timeout: 120
