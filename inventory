@@ -1,11 +1,11 @@
 [master_nodes]
-#192.168.0.201
-node01 ansible_host=192.168.0.201
+#192.168.0.160
+node00prod ansible_host=192.168.0.160
 
 [worker_nodes]
-#192.168.0.202
-node02 ansible_host=192.168.0.202
-#192.168.0.203
-node03 ansible_host=192.168.0.203
-#192.168.0.204
-node04 ansible_host=192.168.0.204
+#192.168.0.161
+node01prod ansible_host=192.168.0.161
+#192.168.0.162
+node02prod ansible_host=192.168.0.162
+#192.168.0.163
+node03prod ansible_host=192.168.0.163

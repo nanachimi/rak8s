@@ -1,8 +1,7 @@
 ---
-- name: {{ inventory_hostname }} joining master node at {{ hostvars['node01'].ansible_host }}:6443
+- name: Joining a master node at {{ hostvars['node00dev'].ansible_host }}:6443
   become_user: root
-  shell: kubeadm join {{ hostvars['node01'].ansible_host }}:6443 --token {{ token }} --discovery-token-unsafe-skip-ca-verification
-  #shell: kubeadm join {{ groups['master_nodes'][0] }}:6443 --token {{ token }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+  shell: kubeadm join {{ hostvars['node00dev'].ansible_host }}:6443 --token {{ token }} --discovery-token-unsafe-skip-ca-verification
   register: kubeadm_join
 - debug: msg={{ kubeadm_join.stdout }}
 

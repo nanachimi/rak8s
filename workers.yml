@@ -1,4 +1,4 @@
 - hosts: worker_nodes
   roles:
-    #- common
+    - common
     - workers
