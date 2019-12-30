@@ -6,11 +6,13 @@
     state: present
 
 - name: Add Kubernetes to available apt sources
+  become_user: root
   apt_repository:
     repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
     state: present
 
 - name: Update apt packages
+  become_user: root
   apt:
     update_cache: yes
     autoclean: yes
@@ -22,39 +24,14 @@
   apt:
     upgrade: full
 
-#- name: Ensure hostname format
-#  hostname:
-#    name: "{{ inventory_hostname }}"
-#  when: not inventory_hostname is match('(\d{1,3}\.){3}\d{1,3}')
-#  register: hostname
-#  tags: hostname
-#
-#- name: Ensure hostname is in /etc/hosts
-#  lineinfile:
-#    dest: /etc/hosts
-#    regexp: "^{{ ansible_default_ipv4.address }}.+$"
-#    line: "{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
-#  register: hostname
-#  tags: hostname
-
 - name: Set timezone to UTC
+  become_user: root
   timezone:
     name: UTC
   register: timezone
 
-# - name: gpu mem check
-#   shell: cat /boot/config.txt | grep gpu_mem
-#   changed_when: false
-#   register: gpu_mem_check
-
-# - name: reduce gpu memory
-#   lineinfile:
-#     path: /boot/config.txt
-#     line: gpu_mem=16
-#   register: gpu_mem
-#   when: gpu_mem_check.stdout == ""
-
 - name: Enabling cgroup options at boot
+  become_user: root
   copy:
     src: cmdline.txt
     dest: /boot/cmdline.txt
@@ -77,6 +54,7 @@
     replace: CONF_SWAPSIZE=0
 
 - name: Install apt-transport-https
+  become_user: root
   apt:
     name: apt-transport-https
     state: latest
@@ -93,7 +71,7 @@
   register: docker_path
   ignore_errors: yes
 
-- name: Run Docker Install Script
+- name: Run docker installation script
   become_user: root
   script: files/get-docker.sh
   when: docker_path.stat.exists == False
@@ -137,8 +115,8 @@
     state: present
     force: yes
 
-
 - name: Reboot all raspberry pis
+  become_user: root
   shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0

@@ -1,16 +1,72 @@
 ---
 # tasks file for dashboard
-- name: Install kubernets dashboard
-  shell: kubectl apply -f files/kubernetes-dashboard.yml
-
-- name: Configure dashboard access
-  shell: kubectl apply -f files/dashboard-admin.yml
+- name: Check if dashboard pods exist
+  become_user: root
+  shell: kubectl -n kubernetes-dashboard get pod -o name | grep dashboard | cat
+  register: dashboard_exist
 
 - name: Force rebuild dashboard pods
-  shell: kubectl -n kube-system delete $(kubectl -n kube-system get pod -o name | grep dashboard)
+  become_user: root
+  shell: kubectl -n kubernetes-dashboard delete $(kubectl -n kubernetes-dashboard get pod -o name | grep dashboard)
+  when: dashboard_exist.stdout != ""
 
 - name: Fetch kubeconfig files
+  become_user: root
   fetch:
     src: /root/.kube/config
     dest: ~/.kube/config
     flat: yes
+
+#- name: Copy dashboard access YML-file
+#  copy:
+#    src: files/dashboard-admin.yml
+#    dest: dashboard-admin.yml
+#    force: yes
+
+#- name: Configure dashboard access
+#  become_user: root
+#  shell: kubectl apply -f dashboard-admin.yml
+
+- name: Waiting for Kubernetes API server at {{ hostvars['node00prod'].ansible_host }}:6443
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 6443
+    state: started
+
+- name: Waiting for etcd client API at {{ hostvars['node00prod'].ansible_host }}:2379
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 2379
+    state: started
+
+- name: Waiting for etcd client API at {{ hostvars['node00prod'].ansible_host }}:2380
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 2380
+    state: started
+
+- name: Waiting for Kubelet API at {{ hostvars['node00prod'].ansible_host }}:10250
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 10250
+    state: started
+
+- name: Waiting for kube-scheduler at {{ hostvars['node00prod'].ansible_host }}:10251
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 10251
+    state: started
+
+- name: Waiting for kube-controller-manager at {{ hostvars['node00prod'].ansible_host }}:10252
+  wait_for:
+    host: "{{ hostvars['node00prod'].ansible_host }}"
+    port: 10252
+    state: started
+
+- name: Wait for 10 seconds and continue with play
+  wait_for:
+    timeout: 10
+
+- name: Configure Kubernetes dashboard
+  become_user: root
+  shell: kubectl apply -f kubernetes-dashboard.yml

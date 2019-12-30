@@ -1,18 +1,21 @@
 ---
-- name: Joining a master node at {{ hostvars['node00dev'].ansible_host }}:6443
+- name: Reseting worker nodes
   become_user: root
-  shell: kubeadm join {{ hostvars['node00dev'].ansible_host }}:6443 --token {{ token }} --discovery-token-unsafe-skip-ca-verification
-  register: kubeadm_join
-- debug: msg={{ kubeadm_join.stdout }}
+  shell: kubeadm reset -f
 
-- name: Reboot workers
-  shell: sleep 2 && reboot "Ansible Reboot"
+- name: Joining a master node at {{ hostvars['node00prod'].ansible_host }}:6443
+  become_user: root
+  shell: kubeadm join {{ hostvars['node00prod'].ansible_host }}:6443 --token {{ token }} --discovery-token-unsafe-skip-ca-verification
+
+- name: Rebooting worker nodes
+  become_user: root
+  shell: sleep 2 && reboot "Rebooting worker nodes"
   async: 1
   poll: 0
   ignore_errors: True
   when: cmdline or timezone or hostname is changed
 
-- name: Wait for reboot
+- name: Waiting for reboot
   wait_for_connection:
     delay: 15
     timeout: 120
