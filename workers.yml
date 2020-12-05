@@ -1,4 +1,0 @@
-- hosts: worker_nodes
-  roles:
-    - common
-    - workers

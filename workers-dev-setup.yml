@@ -1,0 +1,6 @@
+---
+
+- hosts: dev_worker_nodes
+  roles:
+    - common
+    - workers

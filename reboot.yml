@@ -1,0 +1,3 @@
+- hosts: dev_cluster
+  roles:
+    - reboot

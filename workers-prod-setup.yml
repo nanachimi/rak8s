@@ -1,0 +1,6 @@
+---
+
+- hosts: prod_worker_nodes
+  roles:
+    - common
+    - workers

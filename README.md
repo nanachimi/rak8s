@@ -6,6 +6,16 @@ Stand up a Raspberry Pi based Kubernetes cluster with Ansible
 
 [**rak8s**](https://github.com/rak8s) is maintained by [Chris Short](https://github.com/chris-short) and a community of open source folks will to help.
 
+MAC Adresses | IP ADDRESSES | HOST NAMES
+-------------------|---------------|--------------
+DC-A6-32-47-76-C5 | 192.168.0.200 | dev-worker0-node
+DC-A6-32-47-76-47 | 192.168.0.201	| dev-worker1-node
+DC-A6-32-47-76-B6	| 192.168.0.202	| dev-worker2-node
+DC-A6-32-5E-50-EB	| 192.168.0.203	| dev-worker3-node
+DC-A6-32-5E-1E-67	| 192.168.0.210	| prod-worker0-node
+DC-A6-32-5E-4A-C6	| 192.168.0.211	| prod-worker1-node
+DC-A6-32-47-76-2F	| 192.168.0.212	| prod-worker2-node
+DC-A6-32-5E-4D-23	| 192.168.0.213	| prod-worker3-node
 ## Why?
 
 * Raspberry Pis are rad
@@ -19,7 +29,7 @@ Also, it's cheaper than a year of GKE. Plus, why not run Kubernetes in your home
 ## Prerequisites
 
 ### Hardware
-
+        
 * Raspberry Pi 3 (3 or more)
 * Class 10 SD Cards
 * Network connection (wireless or wired) with access to the internet

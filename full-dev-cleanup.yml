@@ -1,0 +1,5 @@
+---
+
+- hosts: dev_cluster
+  roles:
+    - cleanup

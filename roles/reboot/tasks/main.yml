@@ -1,0 +1,13 @@
+---
+
+- name: Reboot Raspberry Pis
+  shell: sleep 2 && reboot "Ansible Reboot"
+  async: 1
+  poll: 0
+  ignore_errors: True
+
+- name: Wait for reboot
+  wait_for_connection:
+    delay: 10
+    timeout: 120
+

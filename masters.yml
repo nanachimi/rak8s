@@ -1,4 +1,0 @@
-- hosts: master_nodes
-  roles:
-    - common
-    - master

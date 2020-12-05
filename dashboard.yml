@@ -1,3 +1,0 @@
-- hosts: master_nodes
-  roles:
-    - dashboard

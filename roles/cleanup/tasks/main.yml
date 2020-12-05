@@ -1,25 +1,20 @@
 ---
 - name: Reset Kubernetes
-  become: yes
-  shell: echo $(kubeadm reset && echo 'true')
+  shell: echo $(kubeadm reset && echo 'true') 
 
 - name: Remove docker images
-  become: true
   shell: echo $(docker rmi --force $(docker images --all -q) && echo 'true')
+  become: true
 
 - name: Update apt packages
-  become: yes
-  become_user: root
   apt:
     update_cache: yes
     autoclean: yes
     autoremove: yes
 
 - name: Purge apt packages
-  become: yes
-  become_user: root
   apt:
-    name:
+    name: 
         - kubelet
         - kubeadm
         - kubectl
@@ -30,63 +25,40 @@
     force: yes
 
 - name: Remove /var/log/pods
-  become: yes
-  become_user: root
   file:
     path: /var/log/pods
     state: absent
 
 - name: Remove /etc/kubernetes
-  become: yes
-  become_user: root
   file:
     path: /etc/kubernetes
     state: absent
-
-- name: Remove /etc/systemd/system/kubelet.service.d
   become: yes
-  become_user: root
-  file:
-    path: /etc/systemd/system/kubelet.service.d
-    state: absent
 
 - name: Remove /var/lib/etcd
-  become: yes
-  become_user: root
   file:
     path: /var/lib/etcd
     state: absent
 
-- name: Remove /etc/cni/net.d
-  become: yes
-  become_user: root
-  file:
-    path: /etc/cni/net.d
-    state: absent
-
-- name: Remove /home/pi/.kube
-  become: yes
-  become_user: root
-  file:
-    path: /home/pi/.kube
-    state: absent
-
 - name: Remove /root/.kube
-  become: yes
-  become_user: root
   file:
     path: /root/.kube
     state: absent
-
-- name: Reboot raspberry pis
   become: yes
-  become_user: root
-  shell: sleep 2 && reboot "Rebooting hold cluster"
+
+- name: Remove /home/pi/.kube
+  file:
+    path: /home/pi/.kube
+    state: absent
+  become: yes
+
+- name: Reboot Raspberry Pis
+  shell: sleep 2 && reboot "Ansible Reboot"
   async: 1
   poll: 0
   ignore_errors: True
 
 - name: Wait for reboot
   wait_for_connection:
-    delay: 30
+    delay: 10
     timeout: 120

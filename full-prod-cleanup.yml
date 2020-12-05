@@ -1,0 +1,5 @@
+---
+
+- hosts: prod_cluster
+  roles:
+    - cleanup

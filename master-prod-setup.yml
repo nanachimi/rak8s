@@ -1,0 +1,7 @@
+---
+
+- hosts: prod_master_node
+  roles:
+    - common
+    - master
+    - dashboard

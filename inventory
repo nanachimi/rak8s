@@ -1,11 +1,35 @@
-[master_nodes]
-#192.168.0.160
-node00prod ansible_host=192.168.0.160
+[dev_master_node]
+dev-node-00 ansible_host=192.168.0.200
 
-[worker_nodes]
-#192.168.0.161
-node01prod ansible_host=192.168.0.161
-#192.168.0.162
-node02prod ansible_host=192.168.0.162
-#192.168.0.163
-node03prod ansible_host=192.168.0.163
+[dev_worker_nodes]
+dev-node-01 ansible_host=192.168.0.201
+dev-node-02 ansible_host=192.168.0.202
+dev-node-03 ansible_host=192.168.0.203
+
+[dev_cluster:children]
+dev_master_node
+dev_worker_nodes
+
+[dev_cluster:vars]
+master_node=dev-node-00
+
+[prod_master_node]
+prod-node-00 ansible_host=192.168.0.210
+
+[prod_worker_nodes]
+prod-node-01 ansible_host=192.168.0.211
+prod-node-02 ansible_host=192.168.0.212
+prod-node-03 ansible_host=192.168.0.213
+
+[prod_cluster]
+prod-node-00 ansible_host=192.168.0.210
+prod-node-01 ansible_host=192.168.0.211
+prod-node-02 ansible_host=192.168.0.212
+prod-node-03 ansible_host=192.168.0.213
+
+[prod_cluster:children]
+prod_master_node
+prod_worker_nodes
+
+[prod_cluster:vars]
+master_node=prod-node-00
