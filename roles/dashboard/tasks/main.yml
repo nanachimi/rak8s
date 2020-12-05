@@ -1,32 +1,17 @@
 ---
 
-- name: Download Flannel
+- name: Download kubernetes dashboard
   get_url:
-    url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-    dest: /home/pi/.kube/
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+    dest: /home/pi/.kube/kubernetes-dashboard.yaml
     mode: '0777'
     owner: pi
     group: pi
-  when: port8080up
-  register: flannel_downloaded
-
-
-
-
-
-
+  register: download_dashboard
 
 - name: Install kubernetes dashboard
-  shell: kubectl apply -f files/kubernetes-dashboard.yml
-
-- name: Configure dashboard access
-  shell: kubectl apply -f files/dashboard-admin.yml
-
-- name: Force rebuild dashboard pods
-  shell: kubectl -n kube-system delete $(kubectl -n kube-system get pod -o name | grep dashboard)
-
-- name: Fetch kubeconfig files
-  fetch:
-    src: /root/.kube/config
-    dest: ~/.kube/config
-    flat: yes
+  shell: kubectl apply -f kubernetes-dashboard.yaml
+  become_user: pi
+  args:
+      chdir: .kube/
+  when: download_dashboard
