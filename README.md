@@ -1,12 +1,8 @@
-# rak8s
+# My Raspberry Clusters
 
-(pronounced rackets - /ˈrækɪts/)
+## My inventory
 
-Stand up a Raspberry Pi based Kubernetes cluster with Ansible
-
-[**rak8s**](https://github.com/rak8s) is maintained by [Chris Short](https://github.com/chris-short) and a community of open source folks will to help.
-
-MAC Adresses | IP ADDRESSES | HOST NAMES
+MAC Address | IP Address | Hostname
 -------------------|---------------|--------------
 DC-A6-32-47-76-C5 | 192.168.0.200 | dev-worker0-node
 DC-A6-32-47-76-47 | 192.168.0.201	| dev-worker1-node
@@ -61,7 +57,7 @@ Also, it's cheaper than a year of GKE. Plus, why not run Kubernetes in your home
 ### Download the latest release or clone the repo:
 
 ``` bash
-git clone https://github.com/rak8s/rak8s.git
+git clone https://github.com/nanachimi/rak8s.git
 ```
 
 ### Modify ansible.cfg and inventory
@@ -78,10 +74,50 @@ ansible -m ping all
 
 This may fail to ping if you have not setup SSH keys and only configured your Pi's with passwords
 
-## Deploy, Deploy, Deploy
+## Clean up all machines
 
+### DEV Machines
 ``` bash
-ansible-playbook cluster.yml
+ansible-playbook full-dev-cleanup.yml
+```
+
+### PROD Machines
+``` bash
+ansible-playbook full-dev-cleanup.yml
+```
+
+## Setup the master node
+
+### DEV Machine
+``` bash
+ansible-playbook master-dev-setup.yml
+```
+
+### PROD Machine
+``` bash
+ansible-playbook master-prod-setup.yml
+```
+## Setting the Token and Certificate Hash
+
+Before setting up worker nodes, the following step has to be made manually.
+After the master node is set, A similar output as the one below as be available in the console.
+```
+"kubeadm join 192.168.0.210:6443 --token 241krc.zlbm6vshqubb4k1n \\",
+        "    --discovery-token-ca-cert-hash sha256:f8d4b05e3dc58ed3d3eeec9c5ffb6c2989432a08c51bea7b3c555ce02955a8c "
+```
+Copy the value of the `token` and `discovery-token-ca-cert-hash` and paste it as value in the `dev_worker_nodes` or `prod_worker_nodes` 
+files depending on the environment which currently being set.
+
+## Setup worker nodes
+
+### DEV Machines
+``` bash
+ansible-playbook workers-dev-setup.yml
+```
+
+### PROD Machines
+``` bash
+ansible-playbook workers-prod-setup.yml
 ```
 
 ## Interact with Kubernetes
